@@ -16,13 +16,13 @@ public class MySmartGrid {
         List<Consumo> consumos = Consumo.consumosDesdeFichero(Config.FICHERO_CONSUMOS);
         System.out.println("Leidos " + consumos.size() + " consumos desde " + Config.FICHERO_CONSUMOS);
       
-        // Tramitamos los consumos de manera secuencial
         String resultado;
-        for (Consumo c:consumos) {
-        	resultado = red.getZona(c.getZona()).tramitarConsumo(c);
-            red.getZona(c.getZona()).getVentana().traza (c.getIdConsumo()+ " - Tramitado: "+resultado);
+        for (Consumo c:consumos) { //tramitamos los consumos de manera concurrente ahora
+        	Tramitacion tarea = new Tramitacion(c, red); //instanciamos la tarea Runnable
+        	Thread hilo = new Thread(tarea); //creación del hilo
+        	hilo.start(); //lo lanzamos
         }
-        red.imprimeAuditoria();
+        red.imprimeAuditoria(); //se imprime antes de que terminen los hilos
     }
 
 }
