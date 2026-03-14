@@ -14,21 +14,21 @@ public class Bateria {
         this.nivelActualKWh = Math.min(nivelInicialKWh, capacidadMaxKWh);
     }
 
-    public double getCapacidadMaxKWh() { return capacidadMaxKWh; }
-    public double getNivelActualKWh() { return nivelActualKWh; }
+    public synchronized double getCapacidadMaxKWh() { return capacidadMaxKWh; }
+    public synchronized double getNivelActualKWh() { return nivelActualKWh; }
 
-    public boolean puedeSuministrar(double kWh) {
+    public synchronized boolean puedeSuministrar(double kWh) {
         return kWh <= nivelActualKWh;
     }
 
-    public double suministra(double kWh) {
+    public synchronized double suministra(double kWh) {
         if (kWh <= 0) return 0.0;
         double suministrado = Math.min(kWh, nivelActualKWh);
         nivelActualKWh -= suministrado;
         return suministrado;
     }
 
-    public void carga(double kWh) {
+    public synchronized void carga(double kWh) {
         if (kWh <= 0) return;
         nivelActualKWh = Math.min(capacidadMaxKWh, nivelActualKWh + kWh);
     }
