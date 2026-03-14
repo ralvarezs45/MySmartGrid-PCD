@@ -2,6 +2,7 @@ package main;
 
 import energy.Consumo;
 import energy.RedEnergetica;
+import energy.ConsumoEstado;
 
 public class Tramitacion implements Runnable {
     
@@ -13,9 +14,11 @@ public class Tramitacion implements Runnable {
         this.red = red;
     }
 
+    //(VERSIÓN 3 - TAREA 2 -> modificar de tal forma que ya no procese consumo por sí misma, sino que deposite el consumo en el sistema, utilizar wait() (esperar) y continuar cuando se llame a notifyAll())
     @Override
     public void run() { //método para ejecutar el hilo de forma concurrente
-        String resultado = red.getZona(consumo.getZona()).tramitarConsumo(consumo);
-        red.getZona(consumo.getZona()).getVentana().traza(consumo.getIdConsumo() + " - Tramitado: " + resultado);
-    }
+    	ConsumoEstado estado = new ConsumoEstado(consumo);
+        red.getZona(consumo.getZona()).getCentroControl().depositarConsumo(estado);
+        estado.esperarProcesado();
+        }
 }

@@ -20,6 +20,17 @@ public class ZonaEnergetica {
         this.bateria = Objects.requireNonNull(bateria);
         this.centroControl = Objects.requireNonNull(centroControl);
         this.v = _v;
+        
+        for (int i = 0; i < main.Config.NUM_OPERARIOS_RED; i++) { //creamos y lanzamos los hilos de los operarios de red para esta zona
+            operators.OperarioRed operario = new operators.OperarioRed(this, i);
+            Thread hiloOp = new Thread(operario);
+            hiloOp.start();
+        }
+        
+        operators.OperarioCarga operarioCarga = new operators.OperarioCarga(this);
+        Thread hiloCarga = new Thread(operarioCarga);
+        hiloCarga.start();
+        
     }
 
     public int getIdZona() { return idZona; }

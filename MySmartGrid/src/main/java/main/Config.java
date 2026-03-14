@@ -7,6 +7,8 @@ public final class Config {
     public static final int NUM_OPERADORES_POR_ZONA = 3;
     public static final int NUM_ZONAS = 5;
     
+    public static final int NUM_OPERARIOS_RED = 2; //tarea 1 de la versión 3 (definimos cuántos operarios habrá por zona)
+    
     // --- Ventanas ---
     public static final int TAMAÑO_VENTANA = 250;
 

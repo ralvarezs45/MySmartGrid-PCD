@@ -1,16 +1,48 @@
 package operators;
 
 import java.util.Random;
-
+import java.util.LinkedList;
+import java.util.Queue;
 import energy.Consumo;
 import energy.ZonaEnergetica;
+import energy.ConsumoEstado;
 
 public class CentroControl {
     private ZonaEnergetica zona;
+    private Queue<ConsumoEstado> consumosPendientes;
+    private boolean fin = false;
 
     public CentroControl() {
-        
+    	this.consumosPendientes = new LinkedList<>();
     }
+    
+    public synchronized void depositarConsumo(ConsumoEstado ce) {
+        consumosPendientes.add(ce);
+        notifyAll();
+    }
+
+    public synchronized ConsumoEstado recogerConsumo() {
+        while (consumosPendientes.isEmpty() && !fin) {
+            try {
+                wait(); //el operario se bloquea si no hay consumos
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        if (consumosPendientes.isEmpty() && fin) {
+            return null;
+        }
+        
+        return consumosPendientes.poll(); //saca y devuelve el primer consumo de la cola
+    }
+    
+    
+    public synchronized void detenerOperarios() {
+        fin = true;
+        notifyAll(); //despierta a los operarios de red dormidos
+    }
+    
     
     public void setZona(ZonaEnergetica zona) {
     	this.zona=zona;

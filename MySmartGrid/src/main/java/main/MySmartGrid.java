@@ -36,6 +36,11 @@ public class MySmartGrid {
             }
         }
         
+        for (int i = 0; i < Config.NUM_ZONAS; i++) {
+            red.getZona(i).getCentroControl().detenerOperarios();
+            red.getZona(i).getBateria().detenerCarga();
+        }
+        
         red.imprimeAuditoria(); //una vez terminan todos los hilos, se imprime la auditoría cuando esté completamente hecho el trabajo
     }
 
