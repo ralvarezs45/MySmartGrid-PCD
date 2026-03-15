@@ -17,7 +17,7 @@ public class Robot implements Runnable {
 
     @Override
     public void run() {
-        while (true) { //bucle que produce energía de forma indefinida (1kWh por producción)
+        while (!bateria.getFin()) { //bucle que produce energía de forma indefinida (1kWh por producción) y mientras no le manden parar
             bateria.depositar(1.0);
         }
     }

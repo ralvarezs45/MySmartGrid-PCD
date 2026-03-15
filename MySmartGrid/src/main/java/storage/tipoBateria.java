@@ -7,6 +7,8 @@ public class tipoBateria {
     private double capacidadMax;
     private double nivelActual;
 
+    private boolean fin = false;
+    
     private final Lock monitor = new ReentrantLock();
     private final Condition lleno = monitor.newCondition();
     private final Condition vacio = monitor.newCondition();
@@ -22,6 +24,9 @@ public class tipoBateria {
             while (nivelActual + cantidad > capacidadMax) {//si no hay espacio suficiente para depositar, el hilo debe bloquearse
                 lleno.await(); 
             }
+            
+            if (fin) return; //salimos del método si nos despiertan para acabar
+            
             nivelActual += cantidad;
             
             vacio.signal();
@@ -54,6 +59,26 @@ public class tipoBateria {
         monitor.lock();
         try {
             return nivelActual;
+        } finally {
+            monitor.unlock();
+        }
+    }
+    
+    public void apagar() { //apagar la batería
+        monitor.lock(); 
+        try {
+            fin = true;
+            lleno.signal(); 
+            vacio.signal(); 
+        } finally {
+            monitor.unlock(); 
+        }
+    }
+    
+    public boolean getFin() {
+        monitor.lock();
+        try {
+            return fin;
         } finally {
             monitor.unlock();
         }

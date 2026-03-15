@@ -86,8 +86,10 @@ public class CentroControl {
        /*
         double total = c.getTotalKWh();
         double suministrado = zona.getBateria().suministra(total);
-        zona.getCuenta().anotaConsumo(suministrado);
+        
         */
+        zona.getCuenta().anotaConsumo(suministrado);
+        
         String resultado = (suministrado >= total)
                 ? "OK: suministrados " + fmt(total) + " kWh"
                 : "PARCIAL: suministrados " + fmt(suministrado) + " kWh (faltan " + fmt(total - suministrado) + " kWh)";
