@@ -60,11 +60,34 @@ public class CentroControl {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-       
+        
+        double total = c.getTotalKWh();
+        double suministrado = 0.0;
+        
+        //VERSIÓN 5 tramitación diferenciada de energía ---
+        for (energy.Demanda d : c.getDemandas()) {
+            String tipo = d.getIdTipo();
+            double cantidad = d.getKWh();
+            
+            if (tipo.equals("SOLAR")) {
+                zona.getBateriaSolar().retirar(cantidad); //usa el monitor explícito (bloquea si no hay)
+                suministrado += cantidad; 
+                
+            } else if (tipo.equals("EOLICA")) {
+                zona.getBateriaEolica().retirar(cantidad); //usa el monitor explícito (bloquea si no hay)
+                suministrado += cantidad;
+                
+            } else {
+                suministrado += zona.getBateria().suministra(cantidad);
+            }
+        }
+        
+        //Versiones 4 y anteriores
+       /*
         double total = c.getTotalKWh();
         double suministrado = zona.getBateria().suministra(total);
         zona.getCuenta().anotaConsumo(suministrado);
-        
+        */
         String resultado = (suministrado >= total)
                 ? "OK: suministrados " + fmt(total) + " kWh"
                 : "PARCIAL: suministrados " + fmt(suministrado) + " kWh (faltan " + fmt(total - suministrado) + " kWh)";
