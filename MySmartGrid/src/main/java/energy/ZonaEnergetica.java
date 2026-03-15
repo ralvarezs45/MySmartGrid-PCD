@@ -1,8 +1,14 @@
 package energy;
 
 import operators.CentroControl;
+import operators.OperarioRed;
+import operators.OperarioCarga;
+import operators.Robot;
+
 import pcd.util.Ventana;
 import storage.Bateria;
+import storage.tipoBateria;
+
 
 import java.awt.Color;
 import java.util.Objects;
@@ -13,6 +19,9 @@ public class ZonaEnergetica {
     private final Bateria bateria;
     private final CentroControl centroControl;
     private Ventana v;
+    
+    private tipoBateria bateriaSolar;
+    private tipoBateria  bateriaEolica;
 
     public ZonaEnergetica(int idZona, CuentaEnergetica cuenta, Bateria bateria, CentroControl centroControl, Ventana _v) {
         this.idZona = idZona;
@@ -22,15 +31,26 @@ public class ZonaEnergetica {
         this.v = _v;
         
         for (int i = 0; i < main.Config.NUM_OPERARIOS_RED; i++) { //creamos y lanzamos los hilos de los operarios de red para esta zona
-            operators.OperarioRed operario = new operators.OperarioRed(this, i);
+            OperarioRed operario = new OperarioRed(this, i);
             Thread hiloOp = new Thread(operario);
             hiloOp.start();
         }
         
-        operators.OperarioCarga operarioCarga = new operators.OperarioCarga(this);
+        OperarioCarga operarioCarga = new OperarioCarga(this);
         Thread hiloCarga = new Thread(operarioCarga);
         hiloCarga.start();
         
+        //Versión 5 ---
+        this.bateriaSolar = new tipoBateria(bateria.getCapacidadMaxKWh());
+        this.bateriaEolica = new tipoBateria(bateria.getCapacidadMaxKWh());
+
+        Robot robotSolar = new Robot(this, bateriaSolar, "SOLAR");
+        Thread hiloSolar = new Thread(robotSolar);
+        hiloSolar.start();
+
+        Robot robotEolico = new Robot(this, bateriaEolica, "EOLICA");
+        Thread hiloEolico = new Thread(robotEolico);
+        hiloEolico.start();
     }
 
     public int getIdZona() { return idZona; }
@@ -39,6 +59,9 @@ public class ZonaEnergetica {
     public CentroControl getCentroControl() { return centroControl; }
 
 
+    public tipoBateria getBateriaSolar() { return bateriaSolar; }
+    public tipoBateria getBateriaEolica() { return bateriaEolica; }
+    
     public String tramitarConsumo(Consumo c) {
 
         if (c.getZona() != idZona) {
