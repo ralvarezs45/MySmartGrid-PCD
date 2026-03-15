@@ -51,7 +51,11 @@ public class RedEnergetica {
 
     public double auditoriaEnergiaDisponibleTotal() {
         double sum = 0.0;
-        for (ZonaEnergetica z : zonas) sum += z.getBateria().getNivelActualKWh();
+        for (ZonaEnergetica z : zonas) {
+        	sum += z.getBateria().getNivelActualKWh();
+        	sum += z.getBateriaSolar().getNivelActualKWh(); 
+        	sum += z.getBateriaEolica().getNivelActualKWh(); 
+        }
         return sum;
     }
 
@@ -63,7 +67,9 @@ public class RedEnergetica {
         	.parallel()
         	.forEach(z->System.out.println("Zona " + z.getIdZona() 
         			+ " | consumidos =" + fmt(z.getCuenta().getBalanceKWh()) + " kWh"
-        			+ " | bateria=" + fmt(z.getBateria().getNivelActualKWh()) + " kWh"));
+        			+ " | bateria=" + fmt(z.getBateria().getNivelActualKWh()) + " kWh"
+        			+ " | Solar=" + fmt(z.getBateriaSolar().getNivelActualKWh()) + " kWh" //Versión 5 (solar + eólica)
+        			+ " | Eolica=" + fmt(z.getBateriaEolica().getNivelActualKWh()) + " kWh"));
         
         //Versión 3 y anteriores ---
         /*
