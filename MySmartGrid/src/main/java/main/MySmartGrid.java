@@ -42,6 +42,38 @@ public class MySmartGrid {
         }
         
         red.imprimeAuditoria(); //una vez terminan todos los hilos, se imprime la auditoría cuando esté completamente hecho el trabajo
+        
+        //Implementación de la versión 4: 
+        
+        //imprimir los consumos menores a 5kWh
+        System.out.println("Consumos con kwh < 5 para " + Config.FICHERO_CONSUMOS);
+        
+        consumos.stream()
+        		.parallel()
+                .filter(c -> c.getTotalKWh() < 5) //se queda solamente con los elementos con menos de 5 kWh
+                .forEach(c -> System.out.println(c.getIdConsumo())); //para cada uno de los elementos lo imprimimos
+        
+        
+        consumos.stream()
+                .parallel()
+                .map(c -> c.getTotalKWh())
+                .max((a, b) -> Double.compare(a, b))
+                .ifPresent(max -> System.out.println("Consumo más alto: " + max)); //mostramos el consumo más alto
+        
+        
+        //"Sagitario, 24"
+        if (consumos.stream()
+        		.parallel()
+        		.anyMatch(c -> c.getDireccion().equals("Sagitario, 24"))) {
+            System.out.println("Encontrado"); //no lo muestra porque no lo encuentra
+        }
+
+        //"Berna, 11"
+        if (consumos.stream()
+        		.parallel()
+        		.anyMatch(c -> c.getDireccion().equals("Berna, 11"))) {
+            System.out.println("Encontrado"); //se imprime "Encontrado" porque lo encuentra
+        }
     }
 
 }

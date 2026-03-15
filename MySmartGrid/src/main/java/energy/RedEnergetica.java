@@ -57,11 +57,24 @@ public class RedEnergetica {
 
     public void imprimeAuditoria() {
         System.out.println("\n=== AUDITORIA RED ===");
+        
+        //Modificación para la versión 4
+        zonas.stream()
+        	.parallel()
+        	.forEach(z->System.out.println("Zona " + z.getIdZona() 
+        			+ " | consumidos =" + fmt(z.getCuenta().getBalanceKWh()) + " kWh"
+        			+ " | bateria=" + fmt(z.getBateria().getNivelActualKWh()) + " kWh"));
+        
+        //Versión 3 y anteriores ---
+        /*
         for (ZonaEnergetica z : zonas) {
             System.out.println("Zona " + z.getIdZona()
                     + " | consumidos =" + fmt(z.getCuenta().getBalanceKWh()) + " kWh"
                     + " | bateria=" + fmt(z.getBateria().getNivelActualKWh()) + " kWh");
         }
+        */
+        
+        
         System.out.println("Consumo total: " + fmt(auditoriaBalanceTotal()) + " kWh");
         System.out.println("Energia disponible total: " + fmt(auditoriaEnergiaDisponibleTotal()) + " kWh");
         System.out.println("=====================\n");
