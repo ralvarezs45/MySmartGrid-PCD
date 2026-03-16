@@ -18,22 +18,27 @@ public class tipoBateria {
         this.nivelActual = 0.0; 
     }
 
-    public void depositar(double cantidad) throws InterruptedException { //método para que los robots depositen
+    public void depositar(double cantidad) { //método para que los robots depositen
         monitor.lock();
         try {
             while (nivelActual + cantidad > capacidadMax) {//si no hay espacio suficiente para depositar, el hilo debe bloquearse
                 lleno.await(); 
-            }            
+            }
+            
+            if (fin) return; //salimos del método si nos despiertan para acabar
+            
             nivelActual += cantidad;
             
             vacio.signal();
             
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         } finally {
             monitor.unlock(); 
         }
     }
 
-    public void retirar(double cantidad) throws InterruptedException {//método para los Operarios de Red
+    public void retirar(double cantidad) {//método para los Operarios de Red
         monitor.lock();
         try {
             while (nivelActual < cantidad) {// si no hay suficiente energía para retirar, el hilo debe bloquearse
@@ -43,7 +48,9 @@ public class tipoBateria {
             
             lleno.signal();
             
-        }  finally {
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
             monitor.unlock(); 
         }
     }
