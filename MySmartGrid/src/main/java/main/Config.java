@@ -24,4 +24,8 @@ public final class Config {
 
     // Semilla para generacion reproducible
     public static final long SEED = 12345L;
+    
+    //Versión 6
+    //máximo de consumos que se pueden tramitar a la vez en una misma zona
+    public static final int MAX_CONSUMOS = 2;
 }

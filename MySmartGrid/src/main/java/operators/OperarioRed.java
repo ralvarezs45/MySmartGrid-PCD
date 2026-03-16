@@ -17,6 +17,11 @@ public class OperarioRed implements Runnable {
 
     @Override
     public void run() {
+    	try {
+            zona.getArranque().acquire(); //acquire para bloquear porque el semáforo está inicialmente a 0 (V6)
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         while (true) {
             ConsumoEstado estadoAsignado = zona.getCentroControl().recogerConsumo(); //recoge el estado del consumo
             if (estadoAsignado == null) {
@@ -24,9 +29,17 @@ public class OperarioRed implements Runnable {
             }
             if (estadoAsignado != null) {
                 Consumo consumo = estadoAsignado.getConsumo();//extrae el consumo real y lo tramita
-                String resultado = zona.tramitarConsumo(consumo);
-                zona.getVentana().traza("Operario " + idOperario + " tramita: " + consumo.getIdConsumo() + " - " + resultado);
-                estadoAsignado.notificarProcesado();
+                try {
+                	zona.getSemaforoCapacidad().acquire(); //si ya hay max_consumos operarios, se bloquea. Nunca va a haber ahora más de max_consumos operarios por zona
+                	String resultado = zona.tramitarConsumo(consumo);
+                    zona.getVentana().traza("Operario " + idOperario + " tramita: " + consumo.getIdConsumo() + " - " + resultado);
+                    estadoAsignado.notificarProcesado();
+                } catch (InterruptedException e) {
+                	e.printStackTrace();
+                } finally {
+                	zona.getSemaforoCapacidad().release(); //siempre liberamos al terminar
+                }
+                
             }
         }
     }

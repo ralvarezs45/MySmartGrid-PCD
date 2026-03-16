@@ -13,6 +13,8 @@ import storage.tipoBateria;
 import java.awt.Color;
 import java.util.Objects;
 
+import java.util.concurrent.Semaphore; //Versión 6
+
 public class ZonaEnergetica {
     private final int idZona;
     private final CuentaEnergetica cuenta;
@@ -22,6 +24,9 @@ public class ZonaEnergetica {
     
     private tipoBateria bateriaSolar;
     private tipoBateria  bateriaEolica;
+    
+    private Semaphore arranqueSemaforos;
+    private Semaphore semaforoCapacidad;//tarea 2 de la v6
 
     public ZonaEnergetica(int idZona, CuentaEnergetica cuenta, Bateria bateria, CentroControl centroControl, Ventana _v) {
         this.idZona = idZona;
@@ -30,10 +35,18 @@ public class ZonaEnergetica {
         this.centroControl = Objects.requireNonNull(centroControl);
         this.v = _v;
         
+        //V6 - Barrera de arranque de los operarios
+        this.arranqueSemaforos = new Semaphore(0); //inicializamos un semáforo cerrado sin permisos
+        this.semaforoCapacidad = new Semaphore(main.Config.MAX_CONSUMOS);
+        
         for (int i = 0; i < main.Config.NUM_OPERARIOS_RED; i++) { //creamos y lanzamos los hilos de los operarios de red para esta zona
             OperarioRed operario = new OperarioRed(this, i);
             Thread hiloOp = new Thread(operario);
             hiloOp.start();
+        }
+        
+        for (int i = 0; i < main.Config.NUM_OPERARIOS_RED; i++) { //despertamos a los operarios (V6)
+            arranqueSemaforos.release(); 
         }
         
         OperarioCarga operarioCarga = new OperarioCarga(this);
@@ -61,6 +74,9 @@ public class ZonaEnergetica {
 
     public tipoBateria getBateriaSolar() { return bateriaSolar; }
     public tipoBateria getBateriaEolica() { return bateriaEolica; }
+    
+    public Semaphore getArranque() { return arranqueSemaforos; } //Versión 6 semáforos
+    public Semaphore getSemaforoCapacidad() { return semaforoCapacidad; }
     
     public String tramitarConsumo(Consumo c) {
 
