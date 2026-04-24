@@ -12,8 +12,10 @@ import storage.tipoBateria;
 
 import java.awt.Color;
 import java.util.Objects;
-
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore; //Versión 6
+
+import main.Config;
 
 public class ZonaEnergetica {
     private final int idZona;
@@ -27,6 +29,8 @@ public class ZonaEnergetica {
     
     private Semaphore arranqueSemaforos;
     private Semaphore semaforoCapacidad;//tarea 2 de la v6
+    
+    private CyclicBarrier barreraArranque;//tarea E de la v8
 
     public ZonaEnergetica(int idZona, CuentaEnergetica cuenta, Bateria bateria, CentroControl centroControl, Ventana _v) {
         this.idZona = idZona;
@@ -38,6 +42,8 @@ public class ZonaEnergetica {
         //V6 - Barrera de arranque de los operarios
         this.arranqueSemaforos = new Semaphore(0); //inicializamos un semáforo cerrado sin permisos
         this.semaforoCapacidad = new Semaphore(main.Config.MAX_CONSUMOS);
+        
+        this.barreraArranque = new CyclicBarrier(Config.NUM_OPERARIOS_RED);//barrera de arranque de los operarios usando CyclicBarrier (Versión 8 tarea E)
         
         for (int i = 0; i < main.Config.NUM_OPERARIOS_RED; i++) { //creamos y lanzamos los hilos de los operarios de red para esta zona
             OperarioRed operario = new OperarioRed(this, i);
@@ -77,6 +83,10 @@ public class ZonaEnergetica {
     
     public Semaphore getArranque() { return arranqueSemaforos; } //Versión 6 semáforos
     public Semaphore getSemaforoCapacidad() { return semaforoCapacidad; }
+    
+    public CyclicBarrier getBarreraArranque() {//tarea E de la v8
+        return barreraArranque;
+    }
     
     public String tramitarConsumo(Consumo c) {
 

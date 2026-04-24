@@ -33,5 +33,7 @@ public final class Config {
     public static int MODO_LANZAR_PEDIDOS = 2; 
     //MODIFICACIÓN PARA LA VERSIÓN 8 -> SI EL VALOR ES IGUAL A 2, EL LANZAMIENTO SE HACE CON UN EXECUTOR
     
+    // Versión 8: tarea E - sincronización de arranque de los operarios (0 = Semáforos, 1 = CyclicBarrier)
+    public static int MODO_ARRANQUE_OPERARIOS = 1;
     
 }

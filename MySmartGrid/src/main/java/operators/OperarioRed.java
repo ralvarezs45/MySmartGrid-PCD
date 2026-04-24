@@ -3,6 +3,7 @@ package operators;
 import energy.Consumo;
 import energy.ConsumoEstado;
 import energy.ZonaEnergetica;
+import main.Config;
 
 //tarea 1 de la versión 3 (implementamos la clase OperarioRed, que será un hilo que continuamnete recoge y procesa consumos)
 public class OperarioRed implements Runnable {
@@ -16,12 +17,20 @@ public class OperarioRed implements Runnable {
     }
 
     @Override
-    public void run() {
+    public void run() { //modificado en la tarea E de la Versión 8
+    	
     	try {
-            zona.getArranque().acquire(); //acquire para bloquear porque el semáforo está inicialmente a 0 (V6)
-        } catch (InterruptedException e) {
+            if (Config.MODO_ARRANQUE_OPERARIOS == 0) {
+                //modo con semáforos V6
+                zona.getArranque().acquire(); 
+            } else if (Config.MODO_ARRANQUE_OPERARIOS == 1) {
+                //modo con CyclicBarrier V8
+                zona.getBarreraArranque().await(); //el hilo se queda esperando aquí hasta que lleguen los demás
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
+    	
         while (true) {
             ConsumoEstado estadoAsignado = zona.getCentroControl().recogerConsumo(); //recoge el estado del consumo
             if (estadoAsignado == null) {
