@@ -24,6 +24,7 @@ public class CentroControl {
 //        consumosPendientes.add(ce);
 //        notifyAll();
 //    }
+    
     //Versión 8 - tarea B
     public void depositarConsumo(ConsumoEstado ce) {
         try {
@@ -49,6 +50,7 @@ public class CentroControl {
 //        return consumosPendientes.poll(); //saca y devuelve el primer consumo de la cola
 //    }
    
+  //Versión 8 - tarea B
     public ConsumoEstado recogerConsumo() {
         while (!fin) {
             try {
