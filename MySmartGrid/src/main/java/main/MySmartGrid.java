@@ -10,6 +10,9 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 
 
@@ -117,6 +120,25 @@ public class MySmartGrid {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+            }
+        } else if (Config.MODO_LANZAR_PEDIDOS == 2) { //Versión 8 - tarea A - modo executor
+        	System.out.println("Lanzando pedidos con Executor");
+        	
+        	int n = Runtime.getRuntime().availableProcessors(); //guardamos el número de procesadores
+        	
+        	ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(n); //usamos fixed ya que se pide un número fijo y estricto de hilos en la tarea, catched sería dinámico
+        	
+        	for (Consumo c : consumos) { //para cada uno de los consumos lo mandamos al pool de threads
+                Tramitacion tarea = new Tramitacion(c, red);
+                executor.execute(tarea); 
+            }
+        	
+        	executor.shutdown(); //apagamos el executor y esperamos a que termine todo
+        	
+        	try {
+                executor.awaitTermination(1, TimeUnit.DAYS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
         

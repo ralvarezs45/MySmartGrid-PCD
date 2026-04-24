@@ -30,5 +30,8 @@ public final class Config {
     public static final int MAX_CONSUMOS = 2;
     
     //Versión 7: tarea 2 - definimos una constante para ver si ser lanzan los pedidos de la forma tradicional o con observables (0 = Tradicional, 1 = Observables)
-    public static int MODO_LANZAR_PEDIDOS = 1; 
+    public static int MODO_LANZAR_PEDIDOS = 2; 
+    //MODIFICACIÓN PARA LA VERSIÓN 8 -> SI EL VALOR ES IGUAL A 2, EL LANZAMIENTO SE HACE CON UN EXECUTOR
+    
+    
 }
