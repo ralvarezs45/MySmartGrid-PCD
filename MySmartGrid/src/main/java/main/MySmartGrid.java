@@ -65,20 +65,61 @@ public class MySmartGrid {
         
         List<Thread> listaHilos = new ArrayList<>(); //creamos una lista de hilos
         
-        for (Consumo c:consumos) { //tramitamos los consumos de manera concurrente ahora
-        	Tramitacion tarea = new Tramitacion(c, red); //instanciamos la tarea Runnable
-        	Thread hilo = new Thread(tarea); //creación del hilo
-        	listaHilos.add(hilo); //añadimos cada hilo en la lista
-        	hilo.start(); //lo lanzamos
-        }
+        //Versión 7: tarea 2 - diferenciamos entre el modo de lanzamiento de los pedidos
         
-        for (Thread hilo : listaHilos) { //para cada hilo existente dentro de la lista
-            try {
-                hilo.join(); //esperamos a que terminen todos los hilos
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        
+        if (Config.MODO_LANZAR_PEDIDOS == 0) {
+        	System.out.println("Lanzando pedidos de forma tradicional");
+        	
+        	for (Consumo c:consumos) { //tramitamos los consumos de manera concurrente ahora
+        		Tramitacion tarea = new Tramitacion(c, red); //instanciamos la tarea Runnable
+        		Thread hilo = new Thread(tarea); //creación del hilo
+        		listaHilos.add(hilo); //añadimos cada hilo en la lista
+        		hilo.start(); //lo lanzamos
+        	}
+        
+        	for (Thread hilo : listaHilos) { //para cada hilo existente dentro de la lista
+        		try {
+        			hilo.join(); //esperamos a que terminen todos los hilos
+        		} catch (InterruptedException e) {
+        			e.printStackTrace();
+        		}
+        	}
+        } else if (Config.MODO_LANZAR_PEDIDOS == 1) { //Implementación de la tarea 2 de la versión 7
+            System.out.println("Lanzando pedidos con Observables");
+            
+            Observable<Consumo> observableLectura = Consumo.consumosDesdeFicheroObservable(Config.FICHERO_CONSUMOS);
+            
+            observableLectura
+            .flatMap(c -> Observable.just(c)
+                    .subscribeOn(Schedulers.computation())
+                    .map(c2 -> {
+                        // creamos y lanzamos el thread
+                        Tramitacion tarea = new Tramitacion(c2, red);
+                        Thread hilo = new Thread(tarea);
+                        
+                        //como Schedulers.computation lanza hilos concurrentes,
+                        //protegemos la lista echando el cerrojo
+                        synchronized(listaHilos) {
+                            listaHilos.add(hilo);
+                        }
+                        
+                        hilo.start();
+                        return c2; 
+                    })
+                )
+                .blockingSubscribe(); //esperamos a que termine de leer todo el fichero y arranca el thread main
+            
+            //esperamos a que los hilos Tramitacion terminen 
+            for (Thread hilo : listaHilos) { 
+                try {
+                    hilo.join(); 
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
+        
         
         for (int i = 0; i < Config.NUM_ZONAS; i++) {
             red.getZona(i).getCentroControl().detenerOperarios();

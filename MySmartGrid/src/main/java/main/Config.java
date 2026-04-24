@@ -28,4 +28,7 @@ public final class Config {
     //Versión 6
     //máximo de consumos que se pueden tramitar a la vez en una misma zona
     public static final int MAX_CONSUMOS = 2;
+    
+    //Versión 7: tarea 2 - definimos una constante para ver si ser lanzan los pedidos de la forma tradicional o con observables (0 = Tradicional, 1 = Observables)
+    public static final int MODO_LANZAR_PEDIDOS = 1; 
 }

@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
+import io.reactivex.rxjava3.core.Observable;
+
 public class Consumo implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -81,4 +83,20 @@ public class Consumo implements Serializable {
         }
         return lista;
     }
+    
+    //Versión 7: tarea 2 - consumosDesdeFicheroObservable
+    public static Observable<Consumo> consumosDesdeFicheroObservable(String path) {
+        return Observable.create(emitter -> {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(path))) {
+                while (true) { 
+                    emitter.onNext((Consumo) ois.readObject()); //emite el objeto directamente
+                }
+            } catch (EOFException e) {
+                emitter.onComplete(); //fin del fichero 
+            } catch (Exception e) {
+                emitter.onError(e);
+            }
+        });
+    }
+    
 }
