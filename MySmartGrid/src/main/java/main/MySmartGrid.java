@@ -203,10 +203,10 @@ public class MySmartGrid {
         
         
         consumos.stream()
-                .parallel()
-                .map(c -> c.getTotalKWh())
-                .max((a, b) -> Double.compare(a, b))
-                .ifPresent(max -> System.out.println("Consumo más alto: " + max)); //mostramos el consumo más alto
+        	.parallel()
+        	.map(c -> c.getTotalKWh())
+        	.reduce((a, b) -> a < b ? b : a)
+        	.ifPresent(max -> System.out.println("Consumo más alto: " + max));
         
         
         //"Sagitario, 24"
