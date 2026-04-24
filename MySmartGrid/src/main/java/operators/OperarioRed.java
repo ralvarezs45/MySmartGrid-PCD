@@ -27,6 +27,8 @@ public class OperarioRed implements Runnable {
                 //modo con CyclicBarrier V8
                 zona.getBarreraArranque().await(); //el hilo se queda esperando aquí hasta que lleguen los demás
             }
+            
+            zona.getLatchArranque().countDown();//tarea F de la v8, notificamos cuando este operario ya ha arrancado y decrementamos el contador
         } catch (Exception e) {
             e.printStackTrace();
         }

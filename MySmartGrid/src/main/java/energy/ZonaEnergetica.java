@@ -12,6 +12,7 @@ import storage.tipoBateria;
 
 import java.awt.Color;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore; //Versión 6
 
@@ -31,6 +32,8 @@ public class ZonaEnergetica {
     private Semaphore semaforoCapacidad;//tarea 2 de la v6
     
     private CyclicBarrier barreraArranque;//tarea E de la v8
+    
+    private CountDownLatch latchArranque;//tarea F de la v8
 
     public ZonaEnergetica(int idZona, CuentaEnergetica cuenta, Bateria bateria, CentroControl centroControl, Ventana _v) {
         this.idZona = idZona;
@@ -44,6 +47,8 @@ public class ZonaEnergetica {
         this.semaforoCapacidad = new Semaphore(main.Config.MAX_CONSUMOS);
         
         this.barreraArranque = new CyclicBarrier(Config.NUM_OPERARIOS_RED);//barrera de arranque de los operarios usando CyclicBarrier (Versión 8 tarea E)
+        
+        this.latchArranque = new CountDownLatch(Config.NUM_OPERARIOS_RED);
         
         for (int i = 0; i < main.Config.NUM_OPERARIOS_RED; i++) { //creamos y lanzamos los hilos de los operarios de red para esta zona
             OperarioRed operario = new OperarioRed(this, i);
@@ -86,6 +91,10 @@ public class ZonaEnergetica {
     
     public CyclicBarrier getBarreraArranque() {//tarea E de la v8
         return barreraArranque;
+    }
+    
+    public CountDownLatch getLatchArranque() {//tarea F de la v
+        return latchArranque;
     }
     
     public String tramitarConsumo(Consumo c) {
