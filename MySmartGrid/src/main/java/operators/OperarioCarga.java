@@ -15,7 +15,7 @@ public class OperarioCarga implements Runnable { //tarea 5: Recarga concurrente 
     	
     	try {
             //el operario de carga espera aquí hasta que el contador del latch sea 0, garantizando que todos los operarios de red han arrancado
-            zona.getLatchArranque().await();
+            zona.getLatchArranque().await();//tarea F de la V8
             
             zona.getVentana().traza("Operario de Carga de la zona " + zona.getIdZona() + " comienza su servicio."); //para ver que comienza después de los de red
         } catch (InterruptedException e) {
