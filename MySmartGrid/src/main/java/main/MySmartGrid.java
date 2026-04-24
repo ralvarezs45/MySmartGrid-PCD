@@ -10,7 +10,9 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
@@ -150,6 +152,25 @@ public class MySmartGrid {
             red.getZona(i).getBateriaSolar().apagar();
             red.getZona(i).getBateriaEolica().apagar(); //apagamos ambas baterías
         }
+        
+        
+        //Versión 8 - tarea C: mostrar el consumo más alto
+        ExecutorService executorConsumoMasAlto = Executors.newSingleThreadExecutor(); //creamos un pool pero para una única tarea
+        
+        Future<Consumo> futureConsumoMasAlto = executorConsumoMasAlto.submit(new ConsumoMasAlto(consumos)); //enviamos la tarea con Callable y obtenemos el Future
+        
+        try {
+            //obtenemos el resultado (get() bloquea hasta que esté listo, por eso no ponemos el awaitTermination)
+            Consumo maximo = futureConsumoMasAlto.get();
+            if (maximo != null) {
+                System.out.println("\n Identificador del consumo más alto: " + maximo.getIdConsumo() + " | Valor del consumo: " + String.format("%.2f", maximo.getTotalKWh()) + " kWh");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+        	executorConsumoMasAlto.shutdown();
+        }
+        
         
         red.imprimeAuditoria(); //una vez terminan todos los hilos, se imprime la auditoría cuando esté completamente hecho el trabajo
         
