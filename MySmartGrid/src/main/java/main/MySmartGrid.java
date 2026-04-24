@@ -2,9 +2,17 @@ package main;
 
 import energy.Consumo;
 
+
 import energy.RedEnergetica;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Observer;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+
 import java.util.List;
 import java.util.ArrayList;
+
+
 
 
 public class MySmartGrid {
@@ -19,6 +27,42 @@ public class MySmartGrid {
         List<Consumo> consumos = Consumo.consumosDesdeFichero(Config.FICHERO_CONSUMOS);
         System.out.println("Leidos " + consumos.size() + " consumos desde " + Config.FICHERO_CONSUMOS);
       
+        //Versión 7: tarea A, creación de dos observables
+        Observable<Consumo> observable = Observable.fromIterable(consumos); //definimos primero al observable desde la colección consumos
+        
+        Observer<Consumo> observer1 = new Observer<Consumo>() { //definimos el primer observador, que es el que calcula la suma de todos los consumos
+            double suma = 0.0; 
+
+            @Override
+            public void onSubscribe(Disposable d) {}
+
+            @Override
+            public void onNext(Consumo c) {
+                suma += c.getTotalKWh(); //sumamos cada vez que llega un consumo
+            }
+
+            @Override
+            public void onError(Throwable e) {}
+
+            @Override
+            public void onComplete() {
+                //imprimimos el resultado y el hilo cuando termina de leer toda la colección que hay en el observable
+                System.out.println("[Observer 1 (suma)] Hilo: " + Thread.currentThread().getName() + " | Suma total calculada: " + String.format("%.2f", suma) + " kWh");
+            }
+        };
+        
+        //Ahora tenemos que suscribir a este observador
+        observable.subscribeOn(Schedulers.computation()).subscribe(observer1);
+        
+        //Ahora creamos el observador 2, que imprime los consumos mayores a 20kWh
+        observable.subscribeOn(Schedulers.computation())
+        	.filter(c -> c.getTotalKWh() > 20.0) //filtramos de la colección los mayores a 20 kWh
+        	.subscribe(c -> {
+        		System.out.println("[Observer 2 (consumos > 20kWh)] Hilo: " + Thread.currentThread().getName() + " | Consumo >20kWh: " + c.getIdConsumo() + " (" + String.format("%.2f", c.getTotalKWh()) + " kWh)");
+        }); //suscribimos con una lambda que implementa el comportamiento del método onNext()
+        
+        
+        
         List<Thread> listaHilos = new ArrayList<>(); //creamos una lista de hilos
         
         for (Consumo c:consumos) { //tramitamos los consumos de manera concurrente ahora
