@@ -12,6 +12,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -170,6 +171,22 @@ public class MySmartGrid {
         } finally {
         	executorConsumoMasAlto.shutdown();
         }
+        
+        try (//Versión 8 - tarea D: filtrar la lista de consumos para quedarnos solo con los que superen los 20 kWh
+		ForkJoinPool pool = new ForkJoinPool()) {
+			FiltradoConsumos tareaFiltrado = new FiltradoConsumos(consumos, 0, consumos.size()); //creamos la tarea
+			
+			pool.execute(tareaFiltrado); //la ejecutamos
+			
+			List<Consumo> filtrados = tareaFiltrado.join(); //aquí tenemos el resultado de los consumos filtrados según se especifique en la variable TRIVIAL
+			
+			pool.shutdown(); //apagamos el pool
+			
+			System.out.println("Consumos filtrados (>20kWh): " + filtrados.size());
+			filtrados.forEach(c -> System.out.println("Identificador del consumo filtrado: " + c.getIdConsumo() + " (" + String.format("%.2f", c.getTotalKWh()) + " kWh)"));
+		}
+        
+        System.out.println("=========================================================================\n");
         
         
         red.imprimeAuditoria(); //una vez terminan todos los hilos, se imprime la auditoría cuando esté completamente hecho el trabajo
