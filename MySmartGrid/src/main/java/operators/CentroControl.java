@@ -1,6 +1,8 @@
 package operators;
 
 import java.util.Random;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.LinkedList;
 import java.util.Queue;
 import energy.Consumo;
@@ -9,38 +11,62 @@ import energy.ConsumoEstado;
 
 public class CentroControl {
     private ZonaEnergetica zona;
-    private Queue<ConsumoEstado> consumosPendientes;
-    private boolean fin = false;
+//    private Queue<ConsumoEstado> consumosPendientes;
+    private LinkedBlockingQueue<ConsumoEstado> consumosPendientes; //Modificación para la tarea B de la v8, usar LinkedBlockingQueue en vez de Queue normal
+    private volatile boolean fin = false;
 
     public CentroControl() {
-    	this.consumosPendientes = new LinkedList<>();
+    	this.consumosPendientes = new LinkedBlockingQueue<>();
     }
     
-    public synchronized void depositarConsumo(ConsumoEstado ce) {
-        consumosPendientes.add(ce);
-        notifyAll();
+    //En la versión 8 eliminamos los synchronized y los notifyAll()
+//    public synchronized void depositarConsumo(ConsumoEstado ce) {
+//        consumosPendientes.add(ce);
+//        notifyAll();
+//    }
+    //Versión 8 - tarea B
+    public void depositarConsumo(ConsumoEstado ce) {
+        try {
+            consumosPendientes.put(ce);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
-
-    public synchronized ConsumoEstado recogerConsumo() {
-        while (consumosPendientes.isEmpty() && !fin) {
+    
+//    public synchronized ConsumoEstado recogerConsumo() {
+//        while (consumosPendientes.isEmpty() && !fin) {
+//            try {
+//                wait(); //el operario se bloquea si no hay consumos
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        
+//        if (consumosPendientes.isEmpty() && fin) {
+//            return null;
+//        }
+//        
+//        return consumosPendientes.poll(); //saca y devuelve el primer consumo de la cola
+//    }
+   
+    public ConsumoEstado recogerConsumo() {
+        while (!fin) {
             try {
-                wait(); //el operario se bloquea si no hay consumos
+                ConsumoEstado ce = consumosPendientes.poll(200, TimeUnit.MILLISECONDS); //el thread espera 200ms a que llegue un consumo, si no llega, sale del poll, comprueba si fin es true y, si no, vuelve a intentarlo
+                if (ce != null) {
+                    return ce;
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        
-        if (consumosPendientes.isEmpty() && fin) {
-            return null;
-        }
-        
-        return consumosPendientes.poll(); //saca y devuelve el primer consumo de la cola
+        return consumosPendientes.poll(); 
     }
     
     
     public synchronized void detenerOperarios() {
         fin = true;
-        notifyAll(); //despierta a los operarios de red dormidos
+       // notifyAll(); //despierta a los operarios de red dormidos
     }
     
     
