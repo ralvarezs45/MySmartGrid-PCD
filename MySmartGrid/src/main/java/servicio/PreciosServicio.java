@@ -1,6 +1,7 @@
 package servicio;
 
 import grpc.PreciosGrpc;
+import grpc.PreciosProto.DemandaRequest;
 import grpc.PreciosProto.PreciosReply;
 import grpc.PreciosProto.PreciosRequest;
 import io.grpc.stub.StreamObserver;
@@ -23,12 +24,24 @@ public class PreciosServicio extends PreciosGrpc.PreciosImplBase{
             	
                 String id = solicitud.getIdConsumo();
                 int zona = solicitud.getIdZona();
-                int numDemandas = solicitud.getDemandasCount();
 
                 v.traza(" [ >>> Servidor ] Calculando precio para: " + id + " (Zona " + zona + ")", Ventana.VERDE);
 
-                //el precio depende del número de demandas
-                double precioFinal = 0.15 * numDemandas;
+                double precioFinal = 0.0;
+                
+                //aquí aplicamos la lógica que se pide
+                for (DemandaRequest d : solicitud.getDemandasList()) { //para cada una de las demandas de la solicitud
+                	String tipo = d.getIdTipo();
+                	double kwh = d.getKWh();
+                	
+                	if (tipo.equals("SOLAR")) { //aplicamos las tarifas
+                		precioFinal += kwh * 0.08;
+                	} else if (tipo.equals("EOLICA") || tipo.equals("EOLICO")) {
+                		precioFinal += kwh * 0.10;
+                	} else {
+                		precioFinal += kwh * 0.15; 
+                	}
+                }
 
                 //construimos la respuesta del servidor
                 PreciosReply respuesta = PreciosReply.newBuilder().setIdConsumo(id).setPrecio(precioFinal).build();

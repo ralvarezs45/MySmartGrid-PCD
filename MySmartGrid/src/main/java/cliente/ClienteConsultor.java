@@ -80,7 +80,7 @@ public class ClienteConsultor {
         
         try {
             for (String dir : direcciones) {
-                v.traza(" [ >>> Cliente ] -> " + dir, Ventana.VERDE);
+                v.traza(" [ Cliente >>> ] -> " + dir, Ventana.VERDE);
                 DireccionRequest req = DireccionRequest.newBuilder().setDireccion(dir).build();
                 requestObserver.onNext(req);
                 
@@ -98,13 +98,13 @@ public class ClienteConsultor {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        v.traza("--- Fin Client Streaming ---\n", Ventana.AZUL);
+        v.traza("--- Fin Client Streaming ---\n", Ventana.VERDE);
     }
 	
 	public void shutdown() throws InterruptedException { //método para cerrar el canal
-        v.traza(" [ >>> Cliente ] Cerrando canal...", Ventana.GRIS);
+        v.traza(" [ >>> Cliente ] Cerrando canal...", Ventana.VERDE);
         canal.shutdown().awaitTermination(5, TimeUnit.SECONDS);
-        v.traza(" [ >>> Cliente ] Canal cerrado.", Ventana.GRIS);
+        v.traza(" [ >>> Cliente ] Canal cerrado.", Ventana.VERDE);
     }
 	
 	public static void main(String[] args) {

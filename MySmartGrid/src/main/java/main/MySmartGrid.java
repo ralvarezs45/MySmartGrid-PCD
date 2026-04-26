@@ -88,7 +88,7 @@ public class MySmartGrid {
 	    } catch (InterruptedException e) {
 	        Thread.currentThread().interrupt();
 	    }
-	    v.traza("--- Fin del Servicio de Precios ---", Ventana.AZUL);
+	    v.traza("--- Fin del Servicio de Precios ---", Ventana.VERDE);
 	}
 	
     public static void main(String[] args) {

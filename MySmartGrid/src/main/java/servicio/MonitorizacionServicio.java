@@ -1,5 +1,8 @@
 package servicio;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import grpc.MonitorizacionGrpc;
 import grpc.MonitorizacionProto.ConsumoReply;
 import grpc.MonitorizacionProto.ConsumoRequest;
@@ -13,14 +16,21 @@ import pcd.util.Ventana;
 public class MonitorizacionServicio extends MonitorizacionGrpc.MonitorizacionImplBase{
 	
 	private final Ventana v;
+	
+	private final ArrayList<ConsumoRequest> historialConsumos = new ArrayList<>();
+	private final HashMap<Integer, Double> totalesPorZona = new HashMap<>();
+	private double totalRedGlobal = 0.0;
 
     public MonitorizacionServicio(Ventana v) {
         this.v = v;
     }
 	
 	@Override
-    public void anotarConsumo(ConsumoRequest solicitud, StreamObserver<ConsumoReply> respuestaObserver) {//la comunicación es Unary, es decir, el cliente envía un mensaje y espera una única respuesta del servidor
-        
+    public synchronized void anotarConsumo(ConsumoRequest solicitud, StreamObserver<ConsumoReply> respuestaObserver) {//la comunicación es Unary, es decir, el cliente envía un mensaje y espera una única respuesta del servidor
+		//le ponemos synchronized a ambos métodos para que dos operarios no escriban a la vez 
+		
+		historialConsumos.add(solicitud);
+		
 		//primero extraemos los datos de la solicitud con los getters que genera el proto
         String id = solicitud.getIdConsumo();
         double kwh = solicitud.getKWh();
@@ -28,13 +38,17 @@ public class MonitorizacionServicio extends MonitorizacionGrpc.MonitorizacionImp
         
         v.traza(" [ >>> Servidor ] Registrando consumo con " + id + " en zona " + zona, Ventana.VERDE);
 
-        //actualizar Red Energética
-        double totalZ = kwh + 50.0; 
-        double totalR = kwh + 200.0;
+        //actualizar Red Energética de la zona
+        double totalActualZona = 0.0;
+        if (totalesPorZona.containsKey(zona)) {
+        	totalActualZona = totalesPorZona.get(zona);
+        }
+        totalesPorZona.put(zona, totalActualZona + kwh);
+        totalRedGlobal += kwh;
 
         //construimos la respuesta del servidor
-        ConsumoReply respuesta = ConsumoReply.newBuilder().setIdZona(zona).setTotalZona(totalZ).setTotalRed(totalR).build();
-
+        ConsumoReply respuesta = ConsumoReply.newBuilder().setIdZona(zona).setTotalZona(totalesPorZona.get(zona)).setTotalRed(totalRedGlobal).build();
+        
         //enviamos la respuesta
         respuestaObserver.onNext(respuesta);
 
@@ -43,28 +57,22 @@ public class MonitorizacionServicio extends MonitorizacionGrpc.MonitorizacionImp
     }
 	
 	@Override
-    public void demandaSolar(DemandaRequest solicitud, StreamObserver<DemandaReply> respuestaObserver) {//en este método la comunicación es Server Streaming, el cliente envía una única solicitud y el servidor contesta con un stream o flujo de mensajes
+    public synchronized void demandaSolar(DemandaRequest solicitud, StreamObserver<DemandaReply> respuestaObserver) {//en este método la comunicación es Server Streaming, el cliente envía una única solicitud y el servidor contesta con un stream o flujo de mensajes
         
 		//primero extraemos los datos de la solicitud con los getters que genera el proto
         int zona = solicitud.getIdZona();
         v.traza(" [ >>> Servidor ] Cliente solicita demanda solar en zona: " + zona, Ventana.VERDE);
         
         //Simulamos que encontramos 5 consumos en esa zona y lo enviamos como un stream
-        for (int i = 1; i <= 5; i++) {
-            String idConsumoEncontrado = "SOLAR_Z" + zona + "_" + i;
-            
-            //construimos la respuesta
-            DemandaReply respuesta = DemandaReply.newBuilder().setIdConsumo(idConsumoEncontrado).build();
-            
-            //enciamos cada una de las respuestas por separado
-            respuestaObserver.onNext(respuesta);
-            
-            //ponemos un pequeño retardo
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        for (int i = 0; i < historialConsumos.size(); i++) {
+        	ConsumoRequest c = historialConsumos.get(i);
+        	
+        	if (c.getIdZona() == zona && c.getSolar() == true) {
+        		DemandaReply respuesta = DemandaReply.newBuilder().setIdConsumo(c.getIdConsumo()).build();
+                respuestaObserver.onNext(respuesta);
+                
+                try { Thread.sleep(200); } catch (InterruptedException e) {} // Efecto visual
+        	}
         }
 
         //cerramos el canal cuando haya terminado de enviar mensajes el servidor
@@ -78,15 +86,23 @@ public class MonitorizacionServicio extends MonitorizacionGrpc.MonitorizacionImp
     
         //devolvemos un observador que va a escuchar las múlitples peticiones del cliente
         return new StreamObserver<DireccionRequest>() {
-            int totalConsumos = 0; 
+        	int totalSolares = 0; 
 
             @Override
             public void onNext(DireccionRequest solicitud) {
-                String direccion = solicitud.getDireccion();
-                v.traza(" [ >>> Servidor ] Recibida la dirección: " + direccion, Ventana.VERDE);
+                String direccionBuscada = solicitud.getDireccion();
+                v.traza(" [ >>> Servidor ] Buscando dirección: " + direccionBuscada, Ventana.VERDE);
                 
-                //para cada dirección encontramos un consumo, por ejemplo
-                totalConsumos += 1; 
+                synchronized (MonitorizacionServicio.this) { //aquí lo que hacemos es proteger el ArrayList compartido con el cerrojo
+                    for (int i = 0; i < historialConsumos.size(); i++) {
+                    	ConsumoRequest c = historialConsumos.get(i);
+                    	
+                    	if (c.getDireccion().equals(direccionBuscada) && c.getSolar() == true) {
+                    		totalSolares++;
+                    		break;
+                    	}
+                    }
+                }
             }
 
             @Override
@@ -97,7 +113,7 @@ public class MonitorizacionServicio extends MonitorizacionGrpc.MonitorizacionImp
             @Override
             public void onCompleted() {//una vez el cliente termine de enviar mensajes     
             	//construimos la respuesta
-            	DireccionReply respuesta = DireccionReply.newBuilder().setTotal(totalConsumos).build();
+            	DireccionReply respuesta = DireccionReply.newBuilder().setTotal(totalSolares).build();
                 
                 respuestaObserver.onNext(respuesta);
                 
