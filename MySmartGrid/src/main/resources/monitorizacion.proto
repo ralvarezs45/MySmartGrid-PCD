@@ -1,7 +1,7 @@
 syntax = "proto3";
-
 option java_package = "grpc";
 option java_outer_classname = "MonitorizacionProto";
+
 package directory;
 
 service Monitorizacion {
@@ -28,7 +28,7 @@ message ConsumoReply {
 }
 
 message DemandaRequest {
-i	nt32 idZona = 1;
+	int32 idZona = 1;
 }
 
 message DemandaReply {
