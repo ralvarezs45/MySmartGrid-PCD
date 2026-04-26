@@ -4,12 +4,21 @@ import energy.Consumo;
 
 
 import energy.RedEnergetica;
+import grpc.PreciosProto.DemandaRequest;
+import grpc.PreciosGrpc;
+import grpc.PreciosProto.PreciosReply;
+import grpc.PreciosProto.PreciosRequest;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.stub.StreamObserver;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.Observer;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
+import pcd.util.Ventana;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
@@ -22,6 +31,65 @@ import java.util.ArrayList;
 
 
 public class MySmartGrid {
+	
+	//método de la versión 9 para hacer la llamada gRPC a calcularPrecios en el puerto 9004
+	public static void ejecutarCalcularPrecios(List<Consumo> consumos, Ventana v) {
+	    v.traza("\n--- Iniciando calcularPrecios (Bidirectional Streaming) ---", Ventana.VERDE);
+	    
+	    ManagedChannel canal = ManagedChannelBuilder.forAddress("localhost", 9004).usePlaintext().build();
+	    PreciosGrpc.PreciosStub asyncStub = PreciosGrpc.newStub(canal);
+
+	    
+	    final CountDownLatch latch = new CountDownLatch(1);
+
+	    
+	    StreamObserver<PreciosReply> respuestaObserver = new StreamObserver<PreciosReply>() {
+	        @Override
+	        public void onNext(PreciosReply r) {
+	            v.traza(" [ >>> Cliente ] Recibido precio de " + r.getIdConsumo() + ": " + r.getPrecio() + " €", Ventana.VERDE);
+	        }
+
+	        @Override
+	        public void onError(Throwable t) {
+	            latch.countDown();
+	        }
+
+	        @Override
+	        public void onCompleted() {
+	            v.traza(" [ >>> Cliente ] Servidor ha finalizado el envío de precios ", Ventana.VERDE);
+	            latch.countDown();
+	        }
+	    };
+
+	    StreamObserver<PreciosRequest> solicitudObserver = asyncStub.calcularPrecios(respuestaObserver);
+
+	    try {
+	        for (Consumo c : consumos) {
+	            v.traza(" [ >>> Cliente ] Enviando a calcular consumo con id: " + c.getIdConsumo(), Ventana.VERDE);
+	            
+	            PreciosRequest.Builder solicitudBuilder = PreciosRequest.newBuilder().setIdConsumo(c.getIdConsumo()).setIdZona(c.getZona());
+
+	            for (energy.Demanda d : c.getDemandas()) {
+	                solicitudBuilder.addDemandas(DemandaRequest.newBuilder().setIdTipo(d.getIdTipo()).setKWh(d.getKWh()).build());
+	            }
+
+	            solicitudObserver.onNext(solicitudBuilder.build());
+	            Thread.sleep(200); 
+	        }
+	    } catch (Exception e) {
+	        solicitudObserver.onError(e);
+	    }
+
+	    solicitudObserver.onCompleted();
+
+	    try {
+	        latch.await(1, TimeUnit.MINUTES);
+	        canal.shutdown().awaitTermination(5, TimeUnit.SECONDS);
+	    } catch (InterruptedException e) {
+	        Thread.currentThread().interrupt();
+	    }
+	    v.traza("--- Fin del Servicio de Precios ---", Ventana.AZUL);
+	}
 	
     public static void main(String[] args) {
         RedEnergetica red = new RedEnergetica(

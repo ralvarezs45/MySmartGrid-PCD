@@ -26,8 +26,8 @@ public class ClienteConsultor {
 	public ClienteConsultor(String host, int port) {
          canal = ManagedChannelBuilder.forAddress(host, port).usePlaintext() .build();
 
-        blockingStub = MonitorizacionGrpc.newBlockingStub(channel);
-        asyncStub = MonitorizacionGrpc.newStub(channel);
+        blockingStub = MonitorizacionGrpc.newBlockingStub(canal);
+        asyncStub = MonitorizacionGrpc.newStub(canal);
         
         v = new Ventana(800, 30, 500, 500, "Cliente Consultor - Versión 9 MySmartGrid");
     }
