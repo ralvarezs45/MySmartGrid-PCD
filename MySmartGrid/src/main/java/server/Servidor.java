@@ -17,8 +17,8 @@ public class Servidor {
         
       
         //configuramos los servidores 
-    	Server serverMonitorizacion = ServerBuilder.forPort(9002).addService(new MonitorizacionServicio(v)).build();
-        Server serverPrecios = ServerBuilder.forPort(9004).addService(new PreciosServicio(v)).build();
+    	Server serverMonitorizacion = ServerBuilder.forPort(9002).addService(new MonitorizacionServicio(v1)).build();
+        Server serverPrecios = ServerBuilder.forPort(9004).addService(new PreciosServicio(v2)).build();
 
         //arrancamos los servidores
         serverMonitorizacion.start();
