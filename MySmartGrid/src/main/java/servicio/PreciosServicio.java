@@ -4,11 +4,18 @@ import grpc.PreciosGrpc;
 import grpc.PreciosProto.PreciosReply;
 import grpc.PreciosProto.PreciosRequest;
 import io.grpc.stub.StreamObserver;
+import pcd.util.Ventana;
 
 public class PreciosServicio extends PreciosGrpc.PreciosImplBase{
+	
+	private final Ventana v;
+
+    public PreciosServicio(Ventana v) {
+        this.v = v;
+    }
 	@Override
     public StreamObserver<PreciosRequest> calcularPrecios(StreamObserver<PreciosReply> respuestaObserver) { //en este método la comunicación es bidireccional, es decir, el cliente envía un flujo de mensajes y recibe del servidor un flujo de mensajes también
-        
+
         return new StreamObserver<PreciosRequest>() { //este es el observador que va a recibir el servidor desde el cliente
 
             @Override
@@ -18,7 +25,7 @@ public class PreciosServicio extends PreciosGrpc.PreciosImplBase{
                 int zona = solicitud.getIdZona();
                 int numDemandas = solicitud.getDemandasCount();
 
-                System.out.println(" [ >>> Servidor ] Calculando precio para: " + id + " (Zona " + zona + ")");
+                v.traza(" [ >>> Servidor ] Calculando precio para: " + id + " (Zona " + zona + ")", Ventana.VERDE);
 
                 //el precio depende del número de demandas
                 double precioFinal = 0.15 * numDemandas;

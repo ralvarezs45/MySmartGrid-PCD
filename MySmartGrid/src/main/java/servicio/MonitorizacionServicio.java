@@ -8,8 +8,15 @@ import grpc.MonitorizacionProto.DemandaRequest;
 import grpc.MonitorizacionProto.DireccionReply;
 import grpc.MonitorizacionProto.DireccionRequest;
 import io.grpc.stub.StreamObserver;
+import pcd.util.Ventana;
 
 public class MonitorizacionServicio extends MonitorizacionGrpc.MonitorizacionImplBase{
+	
+	private final Ventana v;
+
+    public MonitorizacionServicio(Ventana v) {
+        this.v = v;
+    }
 	
 	@Override
     public void anotarConsumo(ConsumoRequest solicitud, StreamObserver<ConsumoReply> respuestaObserver) {//la comunicación es Unary, es decir, el cliente envía un mensaje y espera una única respuesta del servidor
@@ -19,7 +26,7 @@ public class MonitorizacionServicio extends MonitorizacionGrpc.MonitorizacionImp
         double kwh = solicitud.getKWh();
         int zona = solicitud.getIdZona();
         
-        System.out.println(" [ >>> Servidor ] Registrando consumo con " + id + " en zona " + zona);
+        v.traza(" [ >>> Servidor ] Registrando consumo con " + id + " en zona " + zona, Ventana.VERDE);
 
         //actualizar Red Energética
         double totalZ = kwh + 50.0; 
@@ -40,8 +47,8 @@ public class MonitorizacionServicio extends MonitorizacionGrpc.MonitorizacionImp
         
 		//primero extraemos los datos de la solicitud con los getters que genera el proto
         int zona = solicitud.getIdZona();
-        System.out.println(" [ >>> Servidor ] Cliente solicita demanda solar en zona: " + zona);
-
+        v.traza(" [ >>> Servidor ] Cliente solicita demanda solar en zona: " + zona, Ventana.VERDE);
+        
         //Simulamos que encontramos 5 consumos en esa zona y lo enviamos como un stream
         for (int i = 1; i <= 5; i++) {
             String idConsumoEncontrado = "SOLAR_Z" + zona + "_" + i;
@@ -61,7 +68,7 @@ public class MonitorizacionServicio extends MonitorizacionGrpc.MonitorizacionImp
         }
 
         //cerramos el canal cuando haya terminado de enviar mensajes el servidor
-        System.out.println("Fin del envío de demanda solar para zona " + zona);
+        v.traza("Fin del envío de demanda solar para zona " + zona, Ventana.VERDE);
         respuestaObserver.onCompleted();
     }
 	
@@ -76,7 +83,7 @@ public class MonitorizacionServicio extends MonitorizacionGrpc.MonitorizacionImp
             @Override
             public void onNext(DireccionRequest solicitud) {
                 String direccion = solicitud.getDireccion();
-                System.out.println(" [ >>> Servidor ] Recibida la dirección: " + direccion);
+                v.traza(" [ >>> Servidor ] Recibida la dirección: " + direccion, Ventana.VERDE);
                 
                 //para cada dirección encontramos un consumo, por ejemplo
                 totalConsumos += 1; 
