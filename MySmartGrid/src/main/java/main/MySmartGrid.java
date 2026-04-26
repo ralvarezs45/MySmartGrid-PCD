@@ -290,6 +290,11 @@ public class MySmartGrid {
         		.anyMatch(c -> c.getDireccion().equals("Berna, 11"))) {
             System.out.println("Encontrado"); //se imprime "Encontrado" porque lo encuentra
         }
+        
+        //tras completar las auditorías, hacemos la llamada al cliente gRPC
+        System.out.println("\nIniciando cliente gRPC de Precios");
+        Ventana ventanaPrecios = new Ventana(30, 450, 600, 400, "MySmartGrid - Cliente Precios");
+        ejecutarCalcularPrecios(consumos, ventanaPrecios);
     }
 
 }
