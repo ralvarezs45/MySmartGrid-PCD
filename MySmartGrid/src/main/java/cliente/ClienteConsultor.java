@@ -15,6 +15,23 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import pcd.util.Ventana;
 
+/*
+ * Me gustaría hacer una breve explicación sobre la implementación completa de la versión 9 para diferenciar claramente el código anterior del nuevo.
+ * Para transformar nuestro programa MySmartGrid en una aplicación distribuida hemos implementado la siguiente estructura:
+ * Contamos con dos servidores: uno de monitorización en el puerto 9002 ; y otro para calcularPrecios en el puerto 9004.
+ * Los stubs que empleamos son bloqueantes para llamadas síncronas.
+ * Diferenciamos entre 4 tipos de comunicación empleados:
+ * 1. Unary para el método anotarConsumo (Operario de red informa de cada tramitación y espera respuesta única del servidor).
+ * 2. Server Stream para demandaSolar (Consultor recibe un flujo de consumos solares tras una única solicitud).
+ * 3. Client Stream para consumosDireccion (Consultor envía un flujo de direcciones, el servidor las procesa y devuelve un único total al finalizar el stream).
+ * 4. Bidirectional Stream para calcularPrecios (Cliente MySmartGrid y servidor del puerto 9004 intercambian datos simultáneamente y de forma asíncrona).
+ * La estructura seguida para cada cliente, servidor y servicios se puede observar como documentación interna; idéntica a la de los vídeos y vista en guiones de prácticas.
+ * Finalmente, también cabe mencionar que se ha empleado el uso de ventanas desde el paquete pcd.util para una visión más estructurada de implementación gRPC.
+ * Los textos que diferencian de los anteriores están en color verde, para una interpretación más eficaz. 
+ */
+
+
+
 public class ClienteConsultor {
 	
 	private final ManagedChannel canal;
@@ -58,7 +75,7 @@ public class ClienteConsultor {
         
         final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
 
-        StreamObserver<DireccionReply> responseObserver = new StreamObserver<DireccionReply>() {
+        StreamObserver<DireccionReply> respuestaObserver = new StreamObserver<DireccionReply>() {
             @Override
             public void onNext(DireccionReply r) {
                 v.traza(" [ >>> Cliente ] Respuesta final del servidor: Total demandas solares = " + r.getTotal(), Ventana.VERDE);
@@ -76,22 +93,22 @@ public class ClienteConsultor {
             }
         };
 
-        StreamObserver<DireccionRequest> requestObserver = asyncStub.consumosDireccion(responseObserver);
+        StreamObserver<DireccionRequest> solicitudObserver = asyncStub.consumosDireccion(respuestaObserver);
         
         try {
             for (String dir : direcciones) {
                 v.traza(" [ Cliente >>> ] -> " + dir, Ventana.VERDE);
                 DireccionRequest req = DireccionRequest.newBuilder().setDireccion(dir).build();
-                requestObserver.onNext(req);
+                solicitudObserver.onNext(req);
                 
                 Thread.sleep(300);
             }
         } catch (RuntimeException | InterruptedException e) {
-            requestObserver.onError(e);
+            solicitudObserver.onError(e);
             Thread.currentThread().interrupt();
         }
         
-        requestObserver.onCompleted();
+        solicitudObserver.onCompleted();
 
         try {
             latch.await();
