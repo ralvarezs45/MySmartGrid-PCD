@@ -3,6 +3,7 @@ package main;
 import energy.Consumo;
 
 
+
 import energy.RedEnergetica;
 import grpc.PreciosProto.DemandaRequest;
 import grpc.PreciosGrpc;
@@ -26,6 +27,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
+
 
 
 
@@ -90,6 +92,10 @@ public class MySmartGrid {
 	    }
 	    v.traza("--- Fin del Servicio de Precios ---", Ventana.VERDE);
 	}
+	
+	
+	
+	
 	
     public static void main(String[] args) {
         RedEnergetica red = new RedEnergetica(
@@ -247,6 +253,8 @@ public class MySmartGrid {
 			pool.execute(tareaFiltrado); //la ejecutamos
 			
 			List<Consumo> filtrados = tareaFiltrado.join(); //aquí tenemos el resultado de los consumos filtrados según se especifique en la variable TRIVIAL
+			
+			//directamente podríamos hacer un pool.invoke(tareaFiltrado) que devuelve una lista de consumos
 			
 			pool.shutdown(); //apagamos el pool
 			

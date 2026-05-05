@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option java_package = "grpc";
+option java_outer_classname = "AuditoriaOuterClass";
+
+service GestorAuditorias {
+    // Server Streaming: 1 Petición -> Flujo de Respuestas
+    rpc obtenerConsumosPeligrosos (AuditoriaRequest) returns (stream AuditoriaReply);
+}
+
+message AuditoriaRequest {
+    double limiteKwh = 1;
+}
+
+message AuditoriaReply {
+    string idConsumo = 1;
+    int32 zona = 2;
+    double kwh = 3;
+}

@@ -1,0 +1,18 @@
+syntax = "proto3";
+option java_package = "grpc";
+option java_outer_classname = "FiltroOuterClass";
+
+service Filtrado {
+  rpc filtrar(stream FiltroRequest) returns (stream FiltroReply) {}
+}
+
+message FiltroRequest {
+  string idConsumo = 1;
+  string direccion = 2;
+  int32 totalKWh = 3;
+}
+
+message FiltroReply {
+  string idConsumo = 1;
+  int32 totalKWh = 2;
+}

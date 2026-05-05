@@ -47,7 +47,7 @@ public class OperarioRed implements Runnable {
         ConsumoRequest req = ConsumoRequest.newBuilder().setIdConsumo(consumo.getIdConsumo()).setIdZona(consumo.getZona()).setKWh(consumo.getTotalKWh()).setDireccion(consumo.getDireccion()).setSolar(esSolar).build();
 
         try {
-        	zona.getVentana().traza(" [ >>> Cliente ] Enviando anotación de consumo: " + req.getIdConsumo(), Ventana.VERDE);
+        	zona.getVentana().traza(" [ Cliente >>> ] Enviando anotación de consumo: " + req.getIdConsumo(), Ventana.VERDE);
         	
             ConsumoReply resp = blockingStub.anotarConsumo(req);
             
