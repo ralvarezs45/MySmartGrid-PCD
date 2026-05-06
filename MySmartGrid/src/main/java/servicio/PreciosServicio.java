@@ -29,14 +29,43 @@ public class PreciosServicio extends PreciosGrpc.PreciosImplBase {
     @Override
     public StreamObserver<PreciosRequest> calcularPrecios(StreamObserver<PreciosReply> respuestaObserver) {
 
+        // =========================================================================
+        // 1. PEDIMOS LOS PRECIOS AL SERVIDOR 9999 UNA SOLA VEZ (CUMPLE EL ENUNCIADO)
+        // =========================================================================
+        
+        // Creamos un array para guardar los precios y usarlos luego dentro del onNext
+        // Posiciones: 0=SOLAR, 1=EOLICA, 2=RAPIDA
+        final double[] precios = new double[3]; 
+
+        ActualizarRequest req = ActualizarRequest.newBuilder().setNIF("20968707K").setApellidos("Alvarez Sagardoy").setIP("192.168.191.253").build(); 
+
+        try {
+            java.util.Iterator<ActualizarReply> iter = blockingStub.actualizarPrecios(req);
+            
+            while (iter.hasNext()) {
+                ActualizarReply r = iter.next(); 
+                v.traza(" [ >>> Cliente Interno ] Recibe : " + r.getTipoDemanda() + " con precio: " + r.getPrecio(), Ventana.AZUL);
+                
+                if (r.getTipoDemanda().equals("SOLAR")) { 
+                    precios[0] = r.getPrecio();
+                } else if (r.getTipoDemanda().equals("EOLICA") || r.getTipoDemanda().equals("EOLICO")) {
+                    precios[1] = r.getPrecio();
+                } else {
+                    precios[2] = r.getPrecio();
+                }
+            }
+        } catch (StatusRuntimeException e) {
+            v.traza("Error de red: " + e.getMessage(), Ventana.ROJO);
+        }
+
+        // =========================================================================
+        // 2. AHORA SÍ, RECIBIMOS TODOS LOS CONSUMOS Y CALCULAMOS CON LOS PRECIOS GUARDADOS
+        // =========================================================================
+
         return new StreamObserver<PreciosRequest>() {
 
             @Override
             public void onNext(PreciosRequest solicitud) {
-            	
-                double precioSolar = 0.0;
-                double precioEolico = 0.0;
-                double precioRapida = 0.0;
             	
                 String id = solicitud.getIdConsumo();
                 int zona = solicitud.getIdZona();
@@ -44,38 +73,16 @@ public class PreciosServicio extends PreciosGrpc.PreciosImplBase {
                 v.traza(" [ >>> Servidor ] Calculando precio para: " + id + " (Zona " + zona + ")", Ventana.VERDE);
                 double precioFinal = 0.0;
                 
-            	ActualizarRequest req = ActualizarRequest.newBuilder().setNIF("20968707K").setApellidos("Alvarez Sagardoy").setIP("192.168.191.253").build(); 
-
-                try {
-                    java.util.Iterator<ActualizarReply> iter = blockingStub.actualizarPrecios(req);
-                    
-                    while (iter.hasNext()) {
-                        ActualizarReply r = iter.next(); 
-                        v.traza(" [ >>> Cliente Interno ] Recibe : " + r.getTipoDemanda() + " con precio: " + r.getPrecio(), Ventana.AZUL);
-                        
-                        // Cogemos el precio de la respuesta 'r'
-                        if (r.getTipoDemanda().equals("SOLAR")) { 
-                    		precioSolar = r.getPrecio();
-                    	} else if (r.getTipoDemanda().equals("EOLICA") || r.getTipoDemanda().equals("EOLICO")) {
-                    		precioEolico = r.getPrecio();
-                    	} else {
-                    		precioRapida = r.getPrecio();
-                    	}
-                    }
-                } catch (StatusRuntimeException e) {
-                    v.traza("Error de red: " + e.getMessage(), Ventana.ROJO);
-                }
-                
                 for (DemandaRequest d : solicitud.getDemandasList()) { 
                 	String tipo = d.getIdTipo();
                 	double kwh = d.getKWh();
                 	
                 	if (tipo.equals("SOLAR")) { 
-                		precioFinal += kwh * precioSolar;
+                		precioFinal += kwh * precios[0]; // Usamos los precios guardados
                 	} else if (tipo.equals("EOLICA") || tipo.equals("EOLICO")) {
-                		precioFinal += kwh * precioEolico;
+                		precioFinal += kwh * precios[1];
                 	} else {
-                		precioFinal += kwh * precioRapida;
+                		precioFinal += kwh * precios[2];
                 	}
                 }
                 
@@ -91,7 +98,6 @@ public class PreciosServicio extends PreciosGrpc.PreciosImplBase {
             public void onCompleted() {
                 respuestaObserver.onCompleted();
                 
-                // El canal se cierra al final, cuando ya no llegan más consumos
                 try {
                 	canalActualizacion.shutdown().awaitTermination(5, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
